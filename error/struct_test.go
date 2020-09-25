@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_err1_is(t *testing.T) {
+func Test_stringValueError_is(t *testing.T) {
 	type fields struct {
 		msg string
 	}
@@ -25,7 +25,7 @@ func Test_err1_is(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: err1{
+				err: stringValueError{
 					msg: "error 1",
 				},
 			},
@@ -37,20 +37,21 @@ func Test_err1_is(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: fmt.Errorf("wrap: %w", err1{
+				err: fmt.Errorf("wrap: %w", stringValueError{
 					msg: "error 1",
 				}),
 			},
 			want: false,
 		},
 		{
-			name: "diff because of use err2",
+			name: "diff because of use structValueError",
 			fields: fields{
 				msg: "error 1",
 			},
 			args: args{
-				err: err2{
-					msg: "error 1",
+				err: structValueError{
+					code:  code{code: 1},
+					value: value{str: "internal server error"},
 				},
 			},
 			want: false,
@@ -61,7 +62,7 @@ func Test_err1_is(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: err1{
+				err: stringValueError{
 					msg: "",
 				},
 			},
@@ -73,7 +74,7 @@ func Test_err1_is(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: &err1{
+				err: &stringValueError{
 					msg: "error 1",
 				},
 			},
@@ -82,18 +83,18 @@ func Test_err1_is(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := err1{
+			e := stringValueError{
 				msg: tt.fields.msg,
 			}
 			if got := e.is(tt.args.err); got != tt.want {
 				t.Logf("e = %T, tt.args.err = %T", e, tt.args.err)
-				t.Errorf("err1.is() = %v, want %v", got, tt.want)
+				t.Errorf("stringValueError.is() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_err1_as(t *testing.T) {
+func Test_stringValueError_as(t *testing.T) {
 	type fields struct {
 		msg string
 	}
@@ -112,7 +113,7 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: err1{
+				err: stringValueError{
 					msg: "error 1",
 				},
 			},
@@ -124,7 +125,7 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: err1{
+				err: stringValueError{
 					msg: "",
 				},
 			},
@@ -136,7 +137,7 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: fmt.Errorf("wrap: %w", err1{
+				err: fmt.Errorf("wrap: %w", stringValueError{
 					msg: "error 1",
 				}),
 			},
@@ -148,7 +149,7 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: fmt.Errorf("wrap: %w", fmt.Errorf("wrap: %w", err1{
+				err: fmt.Errorf("wrap: %w", fmt.Errorf("wrap: %w", stringValueError{
 					msg: "error 1",
 				})),
 			},
@@ -160,7 +161,7 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: fmt.Errorf("wrap: %w", err1{
+				err: fmt.Errorf("wrap: %w", stringValueError{
 					msg: "",
 				}),
 			},
@@ -172,7 +173,7 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: fmt.Errorf("wrap: %w", fmt.Errorf("wrap: %w", err1{
+				err: fmt.Errorf("wrap: %w", fmt.Errorf("wrap: %w", stringValueError{
 					msg: "",
 				})),
 			},
@@ -184,7 +185,7 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: &err1{
+				err: &stringValueError{
 					msg: "error 1",
 				},
 			},
@@ -196,8 +197,9 @@ func Test_err1_as(t *testing.T) {
 				msg: "error 1",
 			},
 			args: args{
-				err: err2{
-					msg: "error 1",
+				err: structValueError{
+					code:  code{code: 1},
+					value: value{str: "internal server error"},
 				},
 			},
 			want: false,
@@ -215,12 +217,90 @@ func Test_err1_as(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			e := err1{
+			e := stringValueError{
 				msg: tt.fields.msg,
 			}
 			if got := e.as(tt.args.err); got != tt.want {
 				t.Logf("e = %T, tt.args.err = %T", e, tt.args.err)
-				t.Errorf("err1.as() = %v, want %v", got, tt.want)
+				t.Errorf("stringValueError.as() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_interfaceValueError_is(t *testing.T) {
+	type fields struct {
+		err error
+	}
+	type args struct {
+		err error
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "absolutely false because of error interface is not comparable",
+			fields: fields{
+				err: errors.New("hoge"),
+			},
+			args: args{
+				err: errors.New("hoge"),
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := interfaceValueError{
+				err: tt.fields.err,
+			}
+			if got := e.is(tt.args.err); got != tt.want {
+				t.Errorf("interfaceValueError.is() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_structValueError_is(t *testing.T) {
+	type fields struct {
+		code  code
+		value value
+	}
+	type args struct {
+		err error
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "same because of strcut is comparable",
+			fields: fields{
+				code:  code{code: 1},
+				value: value{str: "internal server error"},
+			},
+			args: args{
+				err: structValueError{
+					code:  code{code: 1},
+					value: value{str: "internal server error"},
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := structValueError{
+				code:  tt.fields.code,
+				value: tt.fields.value,
+			}
+			if got := e.is(tt.args.err); got != tt.want {
+				t.Errorf("structValueError.is() = %v, want %v", got, tt.want)
 			}
 		})
 	}

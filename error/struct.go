@@ -2,29 +2,55 @@ package error
 
 import (
 	"errors"
+	"fmt"
 )
 
-type err1 struct {
+type stringValueError struct {
 	msg string
 }
 
-func (e err1) Error() string {
+func (e stringValueError) Error() string {
 	return e.msg
 }
 
-func (e err1) is(err error) bool {
+func (e stringValueError) is(err error) bool {
 	return errors.Is(e, err)
 }
 
-func (e err1) as(err error) bool {
-	var es err1
+func (e stringValueError) as(err error) bool {
+	var es stringValueError
 	return errors.As(err, &es)
 }
 
-type err2 struct {
-	msg string
+type code struct {
+	code uint
 }
 
-func (e err2) Error() string {
-	return e.msg
+type value struct {
+	str string
+}
+
+type structValueError struct {
+	code  code
+	value value
+}
+
+func (e structValueError) is(err error) bool {
+	return errors.Is(e, err)
+}
+
+func (e structValueError) Error() string {
+	return fmt.Sprintf("%d: %s", e.code.code, e.value.str)
+}
+
+type interfaceValueError struct {
+	err error
+}
+
+func (e interfaceValueError) Error() string {
+	return e.err.Error()
+}
+
+func (e interfaceValueError) is(err error) bool {
+	return errors.Is(e, err)
 }
